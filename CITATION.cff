@@ -1,0 +1,11 @@
+﻿cff-version: 1.2.0
+message: "If you use this software or dataset, please cite the accompanying preprint."
+title: "Beyond Probabilistic Silicon: Sub-100 ns Bare-Metal FPGA Containment, Constant O(1) State, and Zero-Drift Reversibility vs. CPU and GPU Architectures"
+authors:
+  - family-names: "Iko"
+    given-names: "Joseph William"
+    affiliation: "Oikonomia Architektur"
+version: 1.0.0
+date-released: 2026-11-23
+license: MIT
+repository-code: "https://github.com/joeiko3424-svg/oikonomia-deterministic-silicon-fpga"

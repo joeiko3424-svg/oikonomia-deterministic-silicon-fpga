@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Beyond Probabilistic Silicon: Sub-100 ns Bare-Metal FPGA Containment, Constant O(1) State, and Zero-Drift Reversibility vs. CPU and GPU Architectures</title>
+<style>
+  @page { size: Letter; margin: 0.8in 0.8in 0.8in 0.8in; }
+  body { font-family: "Times New Roman", Georgia, serif; font-size: 10.5pt; line-height: 1.42; color: #111; max-width: 100%; }
+  h1 { font-family: Arial, Helvetica, sans-serif; font-size: 15pt; line-height: 1.25; margin-bottom: 6px; color: #000; }
+  .meta { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; margin-bottom: 14px; color: #222; border-bottom: 1px solid #ccc; padding-bottom: 8px; }
+  h2 { font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt; border-bottom: 1px solid #888; padding-bottom: 2px; margin-top: 16px; margin-bottom: 7px; color: #000; }
+  h3 { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; margin-top: 12px; margin-bottom: 5px; color: #111; }
+  p { margin-top: 0; margin-bottom: 8px; text-align: justify; }
+  ul, ol { margin-top: 0; margin-bottom: 9px; padding-left: 20px; }
+  li { margin-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-family: Arial, Helvetica, sans-serif; font-size: 8pt; page-break-inside: avoid; }
+  th { border-top: 1.5px solid #000; border-bottom: 1px solid #000; padding: 4px 5px; text-align: left; background-color: #f4f4f4; font-weight: bold; }
+  td { border-bottom: 0.5px solid #ccc; padding: 4px 5px; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 8.5pt; background: #f5f5f5; padding: 1px 3px; }
+  .eq { font-family: "Times New Roman", Georgia, serif; font-style: italic; text-align: center; margin: 8px 0; font-size: 10.5pt; }
+  .refs { font-size: 8.8pt; line-height: 1.35; }
+</style>
+</head>
+<body>
+
+<h1>Beyond Probabilistic Silicon: Sub-100 ns Bare-Metal FPGA Containment, Constant <em>O</em>(1) State, and Zero-Drift Reversibility vs. CPU and GPU Architectures</h1>
+
+<div class="meta">
+  <strong>Author:</strong> Joseph William Iko<sup>1</sup> &nbsp;|&nbsp;
+  <strong>Affiliation:</strong> <sup>1</sup>Oikonomia Architektur, South River, NJ, USA &nbsp;|&nbsp;
+  <strong>Contact:</strong> contact@oikonomia-platform.com<br>
+  <strong>Subject Area:</strong> Hardware Architecture (cs.AR) / Distributed, Parallel, and Cluster Computing (cs.DC)<br>
+  <strong>Open Audit Bundle &amp; SHA-256 Manifest:</strong> <code>https://github.com/joeiko3424-svg/oikonomia-deterministic-silicon-fpga</code>
+</div>
+
+<h2>Abstract</h2>
+<p>Modern institutional infrastructure&mdash;spanning autonomous financial order routing, regulated stablecoin settlement, industrial robotics, and aerospace flight termination&mdash;increasingly deploys probabilistic artificial intelligence models on high-wattage graphics processing units (GPUs) and general-purpose central processing units (CPUs). While GPUs excel at dense throughput-oriented matrix multiplication, both CPUs and GPUs exhibit structural architectural deficiencies when tasked with deterministic safety containment: operating-system scheduling tail jitter, host-memory Time-of-Check to Time-of-Use (TOCTOU) exposure across shared DRAM, linear <em>O</em>(<em>N</em>) audit log memory growth, non-associative IEEE 754 floating-point irreversibility, and 150&ndash;700 W thermal envelopes. Here, we present a controlled, apples-to-apples empirical benchmark comparing compiled C (<code>gcc -O3 -march=native</code>) execution on an isolated x86_64 host core against bare-metal programmable logic on a single-tenant Xilinx UltraScale+ FPGA (<code>0000:34:00.0</code>, Amazon FPGA Image <code>agfi-037dec8eb7fe5504d</code>, PCIe Device ID <code>0x1d0f:0xf010</code>) accessed via direct userspace PCIe Gen3 x16 BAR0 memory-mapped I/O (MMIO). Operating at <strong>10 W V<sub>CCINT</sub></strong> steady-state core power, the bare-metal FPGA achieves <strong>84.34 ns</strong> average posted BAR0 write latency, <strong>870.00 ns</strong> median non-posted read latency, and a <strong>21-cycle (84.0 ns at 250 MHz)</strong> physical drop shunt. Across 100,000 invariant gating evaluations, the FPGA boundary sustains <strong>150.00 ns P50</strong> and <strong>200.00 ns P99.9</strong> latency (<strong>50.00 ns</strong> P99.9&minus;P50 tail jitter), outperforming OS-mediated host IPC containment (<strong>1,150.00 ns P50</strong>, <strong>9,230.00 ns P99.9</strong>, <strong>14,740.00 ns Max</strong>) by <strong>161.6&times;</strong> in tail jitter stability. Under 10,000 interleaved agentic instructions containing 5,000 adversarial faults (notional cap breaches, policy violations, stale epoch replays, and TOCTOU payload mutations), the hardware gate achieves <strong>100.00% interdiction (5,000/5,000)</strong>. Finally, replacing <em>O</em>(<em>N</em>) audit logs (<strong>62,592 KB</strong> RSS growth per 10<sup>6</sup> events) and IEEE 754 floating-point accumulators (<strong>937 drifted bits</strong> and <strong>5.46 &times; 10<sup>21</sup></strong> absolute divergence after 10,000 inverse steps) with a constant <em>O</em>(1) <strong>256-byte (0.25 KB)</strong> bijective Feistel-symplectic integer manifold over &Zopf;<sub>2<sup>64</sup></sub> yields <strong>0 bits of least-significant-bit (LSB) drift</strong>.</p>
+
+<h2>1. Introduction</h2>
+<p>General-purpose CPUs and massively parallel GPUs are architected around speculative execution, deep cache hierarchies, dynamic clock scaling, and throughput-centric SIMT warps. When probabilistic large language models (LLMs) or reinforcement-learning policies actuate external APIs, financial order gateways, or physical motors, software-only guardrails suffer from five physical failure modes:</p>
+<ol>
+  <li><strong>Unbounded Tail Jitter &amp; OS Preemption:</strong> Crossing kernel boundaries, mutex locks, or GPU driver command queues introduces microsecond-to-millisecond latency spikes incompatible with hard real-time safety cutoffs.</li>
+  <li><strong>Host DRAM &amp; TOCTOU Exposure:</strong> Because GPUs operate as host-managed peripherals reading from shared system memory, a compromised OS thread or DMA exploit can mutate validated payloads between software check and wire egress (Time-of-Check to Time-of-Use).</li>
+  <li><strong><em>O</em>(<em>N</em>) State &amp; Audit Log Bloat:</strong> Conventional relational ledgers and hash-chained middleware logs grow linearly with event count <em>N</em>, inducing host DRAM allocation pressure and garbage-collection stalls.</li>
+  <li><strong>IEEE 754 Floating-Point Irreversibility:</strong> Non-associative floating-point rounding ((<em>a</em> + <em>b</em>) + <em>c</em> &ne; <em>a</em> + (<em>b</em> + <em>c</em>)) prevents exact mathematical state unwinding during post-incident forensic root-cause analysis (as required under Federal Reserve SR 26-2 [1] and FDA 21 CFR Part 11).</li>
+  <li><strong>Excessive Thermal &amp; Power Budgets:</strong> Server CPUs (150&ndash;350 W TDP) and AI GPUs (300&ndash;700 W TDP) impose severe cooling and power constraints on edge, aerospace, and medical platforms.</li>
+</ol>
+<p>Building on Landauer&rsquo;s principle of reversible computation [2] and our prior verification of hardware-enforced financial and aerospace controls [3, 4], this work establishes a unified, domain-agnostic empirical benchmark isolating the exact physical boundaries where bare-metal FPGA silicon outperforms compiled C host execution.</p>
+
+<h2>2. Experimental Methodology &amp; Hardware Architecture</h2>
+<p>All experiments were executed on an AWS EC2 <code>f2.6xlarge</code> instance (Ubuntu 26.04 LTS, Linux 7.0.0-1017-aws) equipped with a single-tenant Xilinx UltraScale+ FPGA (PCIe BDF <code>0000:34:00.0</code>, Vendor/Device ID <code>0x1d0f:0xf010</code>, bitstream <code>agfi-037dec8eb7fe5504d</code>). To eliminate cross-language artifacts, both the FPGA PCIe BAR0 driver and all host CPU baselines were written in C (<code>exp1_silicon_audit.c</code>), compiled with <code>gcc -O3 -march=native</code>, pinned to isolated physical core <code>CPU 2</code> (<code>taskset -c 2</code>), and instrumented with <code>CLOCK_MONOTONIC_RAW</code> nanosecond timers. Physical core rail power (V<sub>CCINT</sub>) and AXI/PCIe error registers were sampled via <code>fpga-describe-local-image -S 0 -R -M</code>.</p>
+<p>To enforce bit-exact causal reversibility within constant <em>O</em>(1) memory, valid transactions update a 32-register, 256-byte (0.25 KB) state manifold <em>S</em> &isin; &Zopf;<sub>2<sup>64</sup></sub><sup>32</sup> via a bijective Feistel-symplectic permutation <em>T</em>:</p>
+<div class="eq">
+  M<sub>i</sub> = ((amt<sub>i</sub> &oplus; (epoch<sub>i</sub> &ll; 16) &oplus; K<sub>0</sub>) &times; C<sub>1</sub>) mod 2<sup>64</sup> &nbsp;;&nbsp;
+  S[a]&prime; = (S[a] + M<sub>i</sub>) mod 2<sup>64</sup> &nbsp;;&nbsp;
+  S[b]&prime; = S[b] &oplus; ROTL64(S[a]&prime;, 13)
+</div>
+<p>Because modular addition over &Zopf;<sub>2<sup>64</sup></sub>, bitwise XOR (&oplus;), and 64-bit circular rotation are exact bijections, the inverse operator <em>T</em><sup>&minus;1</sup> reconstructs prior states in reverse chronological order with zero truncation error.</p>
+
+<h2>3. Empirical Results</h2>
+
+<h3>3.1 Latency, Tail Jitter, and Power Envelope</h3>
+<p>Table 1 contrasts bare-metal PCIe BAR0 FPGA execution against two compiled C host baselines: (i) an unprotected L1-cached user-space branch (<code>CPU C -O3 L1</code>, which executes inside the untrusted host address space without process isolation), and (ii) an OS-mediated kernel IPC boundary (<code>CPU C -O3 OS Pipe</code>, representing isolated process-to-process guardrail enforcement).</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Architectural Metric / Benchmark</th>
+      <th>CPU C -O3 (Unprotected L1)</th>
+      <th>CPU C -O3 (OS IPC Boundary)</th>
+      <th>Oikonomia Bare-Metal FPGA</th>
+      <th>Physical Advantage</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Enforcement Substrate</strong></td><td>Host x86_64 User Space</td><td>Linux Kernel IPC / Scheduler</td><td>Xilinx UltraScale+ (<code>0000:34:00.0</code>)</td><td>Physical PCIe Bus Isolation</td></tr>
+    <tr><td><strong>Posted Bus Write / Drop Shunt</strong></td><td>N/A (Shared Host DRAM)</td><td>Kernel Syscall Overhead</td><td><strong>84.34 ns</strong> write | <strong>84.0 ns</strong> shunt</td><td>21-cycle @ 250 MHz cutoff</td></tr>
+    <tr><td><strong>Gate Latency P50 (Median)</strong></td><td>30.00 ns (No Isolation)</td><td>1,150.00 ns</td><td><strong>150.00 ns</strong> (Non-posted R: 870 ns)</td><td><strong>7.67&times;</strong> faster than OS boundary</td></tr>
+    <tr><td><strong>Gate Latency P99</strong></td><td>30.00 ns (No Isolation)</td><td>1,180.00 ns</td><td><strong>160.00 ns</strong></td><td><strong>7.38&times;</strong> faster at P99</td></tr>
+    <tr><td><strong>Gate Latency P99.9 / Max</strong></td><td>Susceptible to IRQ/Preempt</td><td>9,230.00 ns / 14,740.00 ns</td><td><strong>200.00 ns</strong></td><td><strong>46.15&times;</strong> lower P99.9 tail</td></tr>
+    <tr><td><strong>Tail Jitter (P99.9 &minus; P50)</strong></td><td>Unbounded under load</td><td>8,080.00 ns</td><td><strong>50.00 ns</strong></td><td><strong>161.6&times;</strong> tighter jitter bound</td></tr>
+    <tr><td><strong>Steady-State Silicon Power</strong></td><td>150&ndash;350 W (CPU Socket)</td><td>150&ndash;350 W (CPU Socket)</td><td><strong>10 W V<sub>CCINT</sub></strong> (Last/Avg/Max)</td><td><strong>15&times;&ndash;35&times;</strong> lower power (70&times; vs GPU)</td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 Adversarial Containment, Memory Scaling, and Mathematical Reversibility</h3>
+<p>Table 2 summarizes adversarial interdiction across 10,000 interleaved agentic commands (5,000 valid + 5,000 injected faults equally split across notional cap breaches, statutory policy flag violations, stale epoch replays, and TOCTOU post-stage DRAM payload bit mutations), memory scaling across 1,000,000 logged events, and 10,000-step reverse state reconstruction.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Verification Dimension</th>
+      <th>Legacy CPU / GPU Software Stack</th>
+      <th>Oikonomia FPGA Substrate</th>
+      <th>Verified Audit Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Adversarial Fault Containment</strong></td><td>Vulnerable to host DRAM TOCTOU &amp; OS bypass</td><td><strong>5,000 / 5,000 Blocked (100.00%)</strong></td><td>1,250/1,250 blocked in all 4 vectors</td></tr>
+    <tr><td><strong>Active State Memory (10<sup>6</sup> Events)</strong></td><td><strong>+62,592 KB</strong> RSS growth (<em>O</em>(<em>N</em>) log bloat)</td><td><strong>256 Bytes (0.25 KB)</strong> constant <em>O</em>(1)</td><td><strong>250,368&times;</strong> smaller state footprint</td></tr>
+    <tr><td><strong>10,000-Step Reverse Unwinding (<em>T</em><sup>&minus;1</sup>)</strong></td><td><strong>937 drifted bits</strong> (Max err: 5.46 &times; 10<sup>21</sup>)</td><td><strong>0 bits LSB Drift</strong> (Exact identity)</td><td>Bit-exact forensic state recovery</td></tr>
+    <tr><td><strong>Hardware Bus &amp; AXI Error Counters</strong></td><td>ECC / Driver Timeout Exposure</td><td><strong>0 Errors</strong> across all PCIe/AXI registers</td><td>Verified via <code>fpga-describe-local-image</code></td></tr>
+  </tbody>
+</table>
+
+<h2>4. Discussion &amp; Scope Boundaries</h2>
+<p>To maintain strict scientific rigor, two architectural boundaries are explicitly noted: (1) An unprotected L1-cached C branch on the host CPU executes in 30.00 ns because it never leaves the untrusted host process or crosses a hardware isolation boundary; however, once process isolation is enforced via the OS kernel (1,150.00 ns P50, 14,740.00 ns Max), tail latency degrades by nearly two orders of magnitude, whereas the bare-metal FPGA enforces physical PCIe bus separation at 150.00 ns P50 with only 50.00 ns P99.9&minus;P50 jitter; (2) Proprietary Verilog/RTL netlists remain encapsulated within the encrypted AWS AFI (<code>agfi-037dec8eb7fe5504d</code>), while the complete C audit harness (<code>exp1_silicon_audit.c</code>), raw hardware telemetry (<code>hardware_telemetry.log</code>), JSON telemetry (<code>exp1_summary.json</code>), and SHA-256 checksum manifest (<code>AUDIT_MANIFEST.json</code>) are openly published for independent verification.</p>
+
+<h2>References</h2>
+<div class="refs">
+  1. Board of Governors of the Federal Reserve System, FDIC, and OCC, <em>Supervisory Letter SR 26-2: Revised Interagency Guidance on Model Risk Management</em> (April 17, 2026).<br>
+  2. Landauer, R. (1961). Irreversibility and Heat Generation in the Computing Process. <em>IBM Journal of Research and Development</em>, 5(3), 183&ndash;191.<br>
+  3. Iko, J. W. (2026). Hardware-Enforced Monetary Settlement Under the GENIUS Act and Federal Reserve SR 26-2: Bare-Metal FPGA Verification of the Deterministic Financial Infrastructure Standard (DFIS). <em>SSRN Working Paper Series</em>.<br>
+  4. Iko, J. W. (2026). Hardware-Enforced Containment of Autonomous AI Trading Agents Under SEC Rule 15c3-5 and Federal Reserve SR 26-2. <em>SSRN Working Paper Series</em>.
+</div>
+
+</body>
+</html>

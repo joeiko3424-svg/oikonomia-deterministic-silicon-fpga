@@ -1,0 +1,18 @@
+{
+  "exp1_silicon_audit": {
+    "sha256": "294eb50a474f3d0d033cc8c21b264aa13139b3213dc949b769aaed119241b0f8",
+    "bytes": 20904
+  },
+  "exp1_silicon_audit.c": {
+    "sha256": "42f96b1e0a8533cf3923296fe8b75bafba170714fcf24b385a2eb67add05088b",
+    "bytes": 12342
+  },
+  "exp1_summary.json": {
+    "sha256": "a9bcf6a2a39ad56ed4fc166b8eafa3c5e17952244b827532afd18b77edbe597b",
+    "bytes": 1357
+  },
+  "hardware_telemetry.log": {
+    "sha256": "34816dfba49e36a37d767c48185130220e7546aad72880e25a8105a43ae51b43",
+    "bytes": 4050
+  }
+}
